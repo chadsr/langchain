@@ -95,7 +95,10 @@ class RecursiveJsonSplitter:
             for key, value in data.items():
                 new_path = [*current_path, key]
                 chunk_size = self._json_size(chunks[-1])
-                size = self._json_size({key: value})
+                # Measure item with full nesting path, accounting for path overhead
+                nested_new = {}
+                self._set_nested_dict(nested_new, new_path, value)
+                size = self._json_size(nested_new)
                 remaining = self.max_chunk_size - chunk_size
 
                 if size < remaining:
@@ -110,6 +113,15 @@ class RecursiveJsonSplitter:
                     self._json_split(value, new_path, chunks)
         # Handle leaf values and empty dicts
         elif current_path:
+            if chunks[-1]:
+                # Check if adding this leaf would overflow the current chunk
+                nested_current = {}
+                self._set_nested_dict(nested_current, current_path, data)
+                if (
+                    self._json_size(chunks[-1]) + self._json_size(nested_current)
+                    > self.max_chunk_size
+                ):
+                    chunks.append({})
             self._set_nested_dict(chunks[-1], current_path, data)
         return chunks
 
