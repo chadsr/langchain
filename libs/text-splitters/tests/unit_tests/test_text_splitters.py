@@ -3504,6 +3504,31 @@ def test_split_json_empty_dict_value_in_large_payload() -> None:
     assert found_empty, "Empty dict value was lost during splitting"
 
 
+def test_split_json_nested_dict_value_respects_max_chunk_size() -> None:
+    """Test that nested dict values exceeding max_chunk_size are split across chunks."""
+    max_chunk_size = 35
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
+    data: dict[str, Any] = {
+        "container": {"a": {"x": 1, "y": 2, "z": 3}, "b": "test"},
+    }
+    for chunk in splitter.split_json(data):
+        assert len(json.dumps(chunk)) <= max_chunk_size
+
+
+def test_split_json_multi_key_nested_respects_max_chunk_size() -> None:
+    """Test that leaf values at nested paths are split across chunks.
+
+    When combined size exceeds max_chunk_size, nested leaf values should be split.
+    """
+    max_chunk_size = 60
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
+    data: dict[str, Any] = {
+        "wrapper": {"a": "x" * 15, "b": "y" * 15},
+    }
+    for chunk in splitter.split_json(data):
+        assert len(json.dumps(chunk)) <= max_chunk_size
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
@@ -4373,28 +4398,3 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
-
-
-def test_split_json_nested_dict_value_respects_max_chunk_size() -> None:
-    """Test that nested dict values exceeding max_chunk_size are split across chunks."""
-    max_chunk_size = 35
-    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
-    data = {
-        "container": {"a": {"x": 1, "y": 2, "z": 3}, "b": "test"},
-    }
-    for chunk in splitter.split_json(data):
-        assert len(json.dumps(chunk)) <= max_chunk_size
-
-
-def test_split_json_multi_key_nested_respects_max_chunk_size() -> None:
-    """Test that leaf values at nested paths are split across chunks.
-
-    When combined size exceeds max_chunk_size, nested leaf values should be split.
-    """
-    max_chunk_size = 60
-    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
-    data = {
-        "wrapper": {"a": "x" * 15, "b": "y" * 15},
-    }
-    for chunk in splitter.split_json(data):
-        assert len(json.dumps(chunk)) <= max_chunk_size
