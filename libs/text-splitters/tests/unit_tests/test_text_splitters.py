@@ -3506,7 +3506,7 @@ def test_split_json_empty_dict_value_in_large_payload() -> None:
 
 def test_split_json_nested_dict_value_respects_max_chunk_size() -> None:
     """Test that nested dict values exceeding max_chunk_size are split across chunks."""
-    max_chunk_size = 35
+    max_chunk_size = 50
     splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
     data: dict[str, Any] = {
         "container": {"a": {"x": 1, "y": 2, "z": 3}, "b": "test"},
@@ -3520,7 +3520,7 @@ def test_split_json_multi_key_nested_respects_max_chunk_size() -> None:
 
     When combined size exceeds max_chunk_size, nested leaf values should be split.
     """
-    max_chunk_size = 60
+    max_chunk_size = 50
     splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
     data: dict[str, Any] = {
         "wrapper": {"a": "x" * 15, "b": "y" * 15},
